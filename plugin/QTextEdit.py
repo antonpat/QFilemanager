@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         self.setAcceptDrops(True)
         self. settings = QSettings("QTextEdit", "QTextEdit")
         self.myeditor = QTextEdit()
-        assert(self.locale().language() == QLocale.German)
+        #assert(self.locale().language() == QLocale.German)
         self.myeditor.setAcceptRichText(False)
         self.myeditor.setUndoRedoEnabled(True)
         self.myeditor.setStyleSheet(myStyleSheet(self))
