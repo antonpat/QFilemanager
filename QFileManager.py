@@ -54,6 +54,8 @@ else:
     Enabled.webview = True
 from plugin import QTerminalFolder
 
+TREEVIEW = True
+
 def dprint(s):
     print(s, file=sys.stderr)
 
@@ -141,7 +143,10 @@ class myWindow(QMainWindow):
 
         # GUI
         self.treeview = QTreeView()
-        self.listview = QListView()     # QTreeView
+        if TREEVIEW:
+            self.listview = QTreeView()
+        else:
+            self.listview = QListView()
         self.splitter = QSplitter()
         self.splitter.setOrientation(Qt.Horizontal)
         self.splitter.addWidget(self.treeview)
@@ -160,8 +165,35 @@ class myWindow(QMainWindow):
         # main menu
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
+        fileMenu.addAction(self.actionFolderNewWin)
+        fileMenu.addAction(self.actionFolderNew)
+        fileMenu.addAction(self.actionFolderRename)
+        fileMenu.addAction(self.actionFolderDel)
+        fileMenu.addSeparator()
+        fileMenu.addAction(self.actionFileOpen)
+        fileOpenMenu = fileMenu.addMenu('Open...')
+        fileOpenMenu.addAction(self.actionOpenText)
+        fileOpenMenu.addAction(self.actionOpenTextRoot)
+        fileOpenMenu.addAction(self.actionOpenImg)
+        fileOpenMenu.addAction(self.actionOpenTerm)
+        fileMenu.addAction(self.actionFileRename)
+        fileMenu.addAction(self.actionFile2Trash)
+        fileMenu.addAction(self.actionFileDel)
+        fileMenu.addSeparator()
+        fileMenu.addAction(self.actionMkExec)
+        fileMenu.addSeparator()
         fileMenu.addAction(self.actionExit)
-        goMenu = menuBar.addMenu('&Go')
+        editMenu = menuBar.addMenu('&Edit')
+        editMenu.addAction(self.actionFolderCopy)
+        editMenu.addAction(self.actionFolderPaste)
+        editMenu.addSeparator()
+        editMenu.addAction(self.actionFileCut)
+        editMenu.addAction(self.actionFileCopy)
+        editMenu.addAction(self.actionFilePaste)
+        viewMenu = menuBar.addMenu('&View')
+        viewMenu.addAction(self.actionHide)
+        viewMenu.addAction(self.actionRefresh)
+        goMenu = menuBar.addMenu('&Navigate')
         goMenu.addAction(self.actionGoBack)
         goMenu.addAction(self.actionGoUp)
         goMenu.addAction(self.actionGoHome)
@@ -170,41 +202,28 @@ class myWindow(QMainWindow):
         goMenu.addAction(self.actionGoMusic)
         goMenu.addAction(self.actionGoVideo)
         menuHelp = menuBar.addMenu('&Help')
-        menuHelp.addAction(self.helpAction)
+        menuHelp.addAction(self.actionHelp)
 
         # toolbar
         self.tBar = self.addToolBar("Tools")
         self.tBar.setContextMenuPolicy(Qt.PreventContextMenu)
         self.tBar.setMovable(False)
         self.tBar.setIconSize(QSize(16, 16))
-        self.tBar.addAction(self.actionFolderCreate)
+        self.tBar.addAction(self.actionFolderNew)
         self.tBar.addAction(self.actionFolderCopy)
         self.tBar.addAction(self.actionFolderPaste)
         self.tBar.addSeparator()
         self.tBar.addAction(self.actionFileCopy)
         self.tBar.addAction(self.actionFileCut)
         self.tBar.addAction(self.actionFilePaste)
-        self.tBar.addSeparator()
-        self.tBar.addAction(self.findFilesAction)
-        self.tBar.addSeparator()
         self.tBar.addAction(self.actionFile2Trash)
         self.tBar.addAction(self.actionFileDel)
         self.tBar.addSeparator()
-        self.tBar.addAction(self.terminalAction)
-        self.tBar.addSeparator()
-        self.tBar.addAction(self.helpAction)
-        empty = QWidget()
-        empty.setMinimumWidth(60)
-        self.tBar.addWidget(empty)
-        self.tBar.addSeparator()
         self.tBar.addAction(self.actionGoHome)
-        self.tBar.addAction(self.actionGoDocuments)
-        self.tBar.addAction(self.actionGoDownloads)
-        self.tBar.addAction(self.actionGoMusic)
-        self.tBar.addAction(self.actionGoVideo)
-        self.tBar.addSeparator()
         self.tBar.addAction(self.actionGoBack)
         self.tBar.addAction(self.actionGoUp)
+        self.tBar.addAction(self.actionGoDocuments)
+        self.tBar.addAction(self.actionGoDownloads)
         # (fast find)
         self.findfield = QLineEdit()
         self.findfield.addAction(QIcon.fromTheme("edit-find"), QLineEdit.LeadingPosition)
@@ -253,20 +272,18 @@ class myWindow(QMainWindow):
         self.fileModel.setResolveSymlinks(True)
         # - view
         self.listview.setModel(self.fileModel)
-        # QTreeView
-        #self.listview.header().resizeSection(0, 320)
-        #self.listview.header().resizeSection(1, 80)
-        #self.listview.header().resizeSection(2, 80)
-        #self.listview.setSortingEnabled(True)
-        #self.listview.doubleClicked.connect(self.list_doubleClicked)
-        # /QTreeView
-        # QListView
-        # alternatingRowColors=true, , showDropIndicator=false
-        self.listview.setWrapping(True)
-        self.listview.setResizeMode(QListView.Adjust)
-        self.listview.setModelColumn(0)
-        self.listview.activated.connect(self.list_doubleClicked)
-        # /QListView
+        if TREEVIEW:
+            self.listview.header().resizeSection(0, 320)
+            self.listview.header().resizeSection(1, 80)
+            self.listview.header().resizeSection(2, 80)
+            self.listview.setSortingEnabled(True)
+            self.listview.doubleClicked.connect(self.list_doubleClicked)
+        else:   # QListView
+            # alternatingRowColors=true, , showDropIndicator=false
+            self.listview.setWrapping(True)
+            self.listview.setResizeMode(QListView.Adjust)
+            self.listview.setModelColumn(0)
+            self.listview.activated.connect(self.list_doubleClicked)
         self.listview.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.listview.setDragDropMode(QAbstractItemView.DragDrop)
         self.listview.setDragEnabled(True)
@@ -336,49 +353,51 @@ class myWindow(QMainWindow):
         # folder/file manipulations
         # - common
         # - folder
-        self.actionFolderCreate = QAction(QIcon.fromTheme("folder-new"), "Folder create", triggered=self.createNewFolder)
+        self.actionFolderNewWin = QAction(QIcon.fromTheme("folder-new"), "open in new window", triggered=self.openNewWin)
+        self.actionFolderNew = QAction(QIcon.fromTheme("folder-new"), "Folder create", triggered=self.createNewFolder)
         self.actionFolderRename = QAction(QIcon.fromTheme("accessories-text-editor"), "Folder rename", triggered=self.renameFolder)
+        self.actionFolderDel = QAction(QIcon.fromTheme("edit-delete"), "Folder delete", triggered=self.deleteFolder)
         self.actionFolderCopy = QAction(QIcon.fromTheme("edit-copy"), "Folder copy", triggered=self.copyFolder)
         self.actionFolderPaste = QAction(QIcon.fromTheme("edit-paste"), "Folder paste", triggered=self.pasteFolder)
-        self.actionFolderDel = QAction(QIcon.fromTheme("edit-delete"), "Folder delete", triggered=self.deleteFolder)
         # - file
+        self.actionFileOpen = QAction(QIcon.fromTheme("system-run"), "open File", triggered=self.openFile)
         self.actionFileRename = QAction(QIcon.fromTheme("accessories-text-editor"), "rename File", triggered=self.renameFile)
-        self.actionFileCopy = QAction(QIcon.fromTheme("edit-copy"), "copy File(s)", triggered=self.copyFile)
-        self.actionFileCut = QAction(QIcon.fromTheme("edit-cut"), "cut File(s)", triggered=self.cutFile)
-        self.actionFilePaste = QAction(QIcon.fromTheme("edit-paste"), "paste File(s) / Folder", triggered=self.pasteFile)
         self.actionFileDel = QAction(QIcon.fromTheme("edit-delete"), "delete File(s)", triggered=self.deleteFile)
         self.actionFile2Trash = QAction(QIcon.fromTheme("user-trash"), "move to trash", triggered=self.deleteFileTrash)
+        self.actionFileCut = QAction(QIcon.fromTheme("edit-cut"), "cut File(s)", triggered=self.cutFile)
+        self.actionFileCopy = QAction(QIcon.fromTheme("edit-copy"), "copy File(s)", triggered=self.copyFile)
+        self.actionFilePaste = QAction(QIcon.fromTheme("edit-paste"), "paste File(s) / Folder", triggered=self.pasteFile)
         # misc
-        self.hiddenAction = QAction("show hidden Files", triggered=self.enableHidden)
-        self.refreshAction = QAction(QIcon.fromTheme("view-refresh"), "refresh View", triggered=self.refreshList, shortcut="F5")
-        self.findFilesAction = QAction(QIcon.fromTheme("edit-find"), "find in folder", triggered=self.findFiles)
-        self.executableAction = QAction(QIcon.fromTheme("applications-utilities"), "make executable", triggered=self.makeExecutable)
-        self.actionOpenFile = QAction(QIcon.fromTheme("system-run"), "open File", triggered=self.openFile)
-        self.actionNewWin = QAction(QIcon.fromTheme("folder-new"), "open in new window", triggered=self.openNewWin)
-        self.helpAction = QAction(QIcon.fromTheme("help"), "Help", triggered=self.showHelp)
+        self.actionMkExec = QAction(QIcon.fromTheme("applications-utilities"), "make executable", triggered=self.makeExecutable)
+        self.actionHide = QAction("show hidden Files", triggered=self.enableHidden)
+        self.actionRefresh = QAction(QIcon.fromTheme("view-refresh"), "refresh View", triggered=self.refreshList, shortcut="F5")
+        self.actionFindFiles = QAction(QIcon.fromTheme("edit-find"), "find in folder", triggered=self.findFiles)
+        self.actionHelp = QAction(QIcon.fromTheme("help"), "Help", triggered=self.showHelp)
         # open/plugins
+        # - folder
+        self.actionFolderZip = QAction(QIcon.fromTheme("zip"), "create zip from folder", triggered=self.createZipFromFolder)
+        self.actionFolderTerm = QAction(QIcon.fromTheme("terminal"), "open folder in Terminal", triggered=self.showInTerminal)
+        self.playlistAction = QAction(QIcon.fromTheme("audio-x-generic"), "make playlist from all mp3 files", triggered=self.makePlaylist)
+        # - files
         self.actionOpenText = QAction(QIcon.fromTheme("system-run"), "open File with built-in Texteditor", triggered=self.openFileText)
         self.actionOpenTextRoot = QAction(QIcon.fromTheme("applications-system"), "edit as root", triggered=self.openFileTextRoot)
-        self.imageAction = QAction(QIcon.fromTheme("image-x-generic"), "show Image", triggered=self.showImage)
-        self.urlAction = QAction(QIcon.fromTheme("browser"), "preview Page", triggered=self.showURL)
-        self.dbAction = QAction(QIcon.fromTheme("image-x-generic"), "show Database", triggered=self.showDB)
-        self.py2Action = QAction(QIcon.fromTheme("python"), "run in python", triggered=self.runPy2)
-        self.py3Action = QAction(QIcon.fromTheme("python3"), "run in python3", triggered=self.runPy3)
-        self.zipAction = QAction(QIcon.fromTheme("zip"), "create zip from folder", triggered=self.createZipFromFolder)
-        self.zipFilesAction = QAction(QIcon.fromTheme("zip"), "create zip from selected files", triggered=self.createZipFromFiles)
-        self.unzipHereAction = QAction(QIcon.fromTheme("application-zip"), "extract here ...", triggered=self.unzipHere)
-        self.unzipToAction = QAction(QIcon.fromTheme("application-zip"), "extract to ...", triggered=self.unzipTo)
-        self.playAction = QAction(QIcon.fromTheme("multimedia-player"), "play with Qt5Player", triggered=self.playInternal)
-        self.playInternalAction = QAction(QIcon.fromTheme("vlc"), "play with vlc", triggered=self.playMedia)
-        self.mp3Action = QAction(QIcon.fromTheme("audio-x-generic"), "convert to mp3", triggered=self.makeMP3)
-        self.playlistAction = QAction(QIcon.fromTheme("audio-x-generic"), "make playlist from all mp3 files", triggered=self.makePlaylist)
-        self.playlistPlayerAction = QAction(QIcon.fromTheme("audio-x-generic"), "play Playlist", triggered=self.playPlaylist)
-        self.terminalAction = QAction(QIcon.fromTheme("terminal"), "open folder in Terminal", triggered=self.showInTerminal)
-        self.startInTerminalAction = QAction(QIcon.fromTheme("terminal"), "execute in Terminal", triggered=self.startInTerminal)
+        self.actionOpenImg = QAction(QIcon.fromTheme("image-x-generic"), "show Image", triggered=self.showImage)
+        self.actionOpenUrl = QAction(QIcon.fromTheme("browser"), "preview Page", triggered=self.showURL)
+        self.actionOpenDB = QAction(QIcon.fromTheme("image-x-generic"), "show Database", triggered=self.showDB)
+        self.actionOpenPy2 = QAction(QIcon.fromTheme("python"), "run in python", triggered=self.runPy2)
+        self.actionOpenPy3 = QAction(QIcon.fromTheme("python3"), "run in python3", triggered=self.runPy3)
+        self.actionFilesZip = QAction(QIcon.fromTheme("zip"), "create zip from selected files", triggered=self.createZipFromFiles)
+        self.actionUnzipHere = QAction(QIcon.fromTheme("application-zip"), "extract here ...", triggered=self.unzipHere)
+        self.actionUnzipTo = QAction(QIcon.fromTheme("application-zip"), "extract to ...", triggered=self.unzipTo)
+        self.actionPlayInt = QAction(QIcon.fromTheme("multimedia-player"), "play with Qt5Player", triggered=self.playInternal)
+        self.actionPlayVLC = QAction(QIcon.fromTheme("vlc"), "play with vlc", triggered=self.playMedia)
+        self.actionToMp3 = QAction(QIcon.fromTheme("audio-x-generic"), "convert to mp3", triggered=self.makeMP3)
+        self.actionPlayList = QAction(QIcon.fromTheme("audio-x-generic"), "play Playlist", triggered=self.playPlaylist)
+        self.actionOpenTerm = QAction(QIcon.fromTheme("terminal"), "execute in Terminal", triggered=self.startInTerminal)
 
         # shortcuts
-        self.actionOpenFile.setShortcut(QKeySequence(Qt.Key_Return))
-        self.actionNewWin.setShortcut(QKeySequence("Ctrl+n"))
+        self.actionFileOpen.setShortcut(QKeySequence(Qt.Key_Return))
+        self.actionFolderNewWin.setShortcut(QKeySequence("Ctrl+n"))
         self.actionOpenText.setShortcut(QKeySequence(Qt.Key_F6))
         self.actionFileRename.setShortcut(QKeySequence(Qt.Key_F2))
         self.actionFileCopy.setShortcut(QKeySequence("Ctrl+c"))
@@ -386,18 +405,18 @@ class myWindow(QMainWindow):
         self.actionFilePaste.setShortcut(QKeySequence("Ctrl+v"))
         self.actionFileDel.setShortcut(QKeySequence("Shift+Del"))
         self.actionFile2Trash.setShortcut(QKeySequence("Del"))
-        self.findFilesAction.setShortcut(QKeySequence("Ctrl+f"))
-        self.playAction.setShortcut(QKeySequence(Qt.Key_F3))
-        self.hiddenAction.setShortcut(QKeySequence("Ctrl+h"))
+        self.actionFindFiles.setShortcut(QKeySequence("Ctrl+f"))
+        self.actionPlayInt.setShortcut(QKeySequence(Qt.Key_F3))
+        self.actionHide.setShortcut(QKeySequence("Ctrl+h"))
         self.actionGoBack.setShortcut(QKeySequence(Qt.Key_Backspace))
-        self.helpAction.setShortcut(QKeySequence(Qt.Key_F1))
-        self.terminalAction.setShortcut(QKeySequence(Qt.Key_F7))
-        self.startInTerminalAction.setShortcut(QKeySequence(Qt.Key_F8))
-        self.actionFolderCreate.setShortcut(QKeySequence("Shift+Ctrl+n"))
+        self.actionHelp.setShortcut(QKeySequence(Qt.Key_F1))
+        self.actionFolderTerm.setShortcut(QKeySequence(Qt.Key_F7))
+        self.actionOpenTerm.setShortcut(QKeySequence(Qt.Key_F8))
+        self.actionFolderNew.setShortcut(QKeySequence("Shift+Ctrl+n"))
 
         # context visibility
-        self.actionOpenFile.setShortcutVisibleInContextMenu(True)
-        self.actionNewWin.setShortcutVisibleInContextMenu(True)
+        self.actionFileOpen.setShortcutVisibleInContextMenu(True)
+        self.actionFolderNewWin.setShortcutVisibleInContextMenu(True)
         self.actionOpenText.setShortcutVisibleInContextMenu(True)
         self.actionFileRename.setShortcutVisibleInContextMenu(True)
         self.actionFileCopy.setShortcutVisibleInContextMenu(True)
@@ -405,31 +424,31 @@ class myWindow(QMainWindow):
         self.actionFilePaste.setShortcutVisibleInContextMenu(True)
         self.actionFileDel.setShortcutVisibleInContextMenu(True)
         self.actionFile2Trash.setShortcutVisibleInContextMenu(True)
-        self.findFilesAction.setShortcutVisibleInContextMenu(True)
-        self.playAction.setShortcutVisibleInContextMenu(True)
-        self.refreshAction.setShortcutVisibleInContextMenu(True)
-        self.hiddenAction.setShortcutVisibleInContextMenu(True)
-        self.hiddenAction.setCheckable(True)
+        self.actionFindFiles.setShortcutVisibleInContextMenu(True)
+        self.actionPlayInt.setShortcutVisibleInContextMenu(True)
+        self.actionRefresh.setShortcutVisibleInContextMenu(True)
+        self.actionHide.setShortcutVisibleInContextMenu(True)
+        self.actionHide.setCheckable(True)
         self.actionGoBack.setShortcutVisibleInContextMenu(True)
-        self.helpAction.setShortcutVisibleInContextMenu(True)
-        self.terminalAction.setShortcutVisibleInContextMenu(True)
-        self.startInTerminalAction.setShortcutVisibleInContextMenu(True)
-        self.actionFolderCreate.setShortcutVisibleInContextMenu(True)
+        self.actionHelp.setShortcutVisibleInContextMenu(True)
+        self.actionFolderTerm.setShortcutVisibleInContextMenu(True)
+        self.actionOpenTerm.setShortcutVisibleInContextMenu(True)
+        self.actionFolderNew.setShortcutVisibleInContextMenu(True)
 
         # tree context
-        self.treeview.addAction(self.actionFolderCreate)
+        self.treeview.addAction(self.actionFolderNew)
         self.treeview.addAction(self.actionFolderRename)
         self.treeview.addAction(self.actionFolderCopy)
         self.treeview.addAction(self.actionFolderPaste)
         self.treeview.addAction(self.actionFolderDel)
         self.treeview.addAction(self.actionFileRename)
-        self.treeview.addAction(self.findFilesAction)
-        self.treeview.addAction(self.zipAction)
-        self.treeview.addAction(self.terminalAction)
+        self.treeview.addAction(self.actionFindFiles)
+        self.treeview.addAction(self.actionFolderZip)
+        self.treeview.addAction(self.actionFolderTerm)
 
         # files context
-        self.listview.addAction(self.actionOpenFile)
-        self.listview.addAction(self.actionNewWin)
+        self.listview.addAction(self.actionFileOpen)
+        self.listview.addAction(self.actionFolderNewWin)
         self.listview.addAction(self.actionOpenText)
         self.listview.addAction(self.actionOpenTextRoot)
         self.listview.addAction(self.actionFileRename)
@@ -438,24 +457,24 @@ class myWindow(QMainWindow):
         self.listview.addAction(self.actionFilePaste)
         self.listview.addAction(self.actionFileDel)
         self.listview.addAction(self.actionFile2Trash)
-        self.listview.addAction(self.imageAction)
-        self.listview.addAction(self.urlAction)
-        self.listview.addAction(self.dbAction)
-        self.listview.addAction(self.py2Action)
-        self.listview.addAction(self.py3Action)
-        self.listview.addAction(self.zipFilesAction)
-        self.listview.addAction(self.unzipHereAction)
-        self.listview.addAction(self.unzipToAction)
-        self.listview.addAction(self.playAction)
-        self.listview.addAction(self.playInternalAction)
-        self.listview.addAction(self.mp3Action)
+        self.listview.addAction(self.actionOpenImg)
+        self.listview.addAction(self.actionOpenUrl)
+        self.listview.addAction(self.actionOpenDB)
+        self.listview.addAction(self.actionOpenPy2)
+        self.listview.addAction(self.actionOpenPy3)
+        self.listview.addAction(self.actionFilesZip)
+        self.listview.addAction(self.actionUnzipHere)
+        self.listview.addAction(self.actionUnzipTo)
+        self.listview.addAction(self.actionPlayInt)
+        self.listview.addAction(self.actionPlayVLC)
+        self.listview.addAction(self.actionToMp3)
         self.listview.addAction(self.playlistAction)
-        self.listview.addAction(self.playlistPlayerAction)
-        self.listview.addAction(self.refreshAction)
-        self.listview.addAction(self.hiddenAction)
-        self.listview.addAction(self.terminalAction)
-        self.listview.addAction(self.startInTerminalAction)
-        self.listview.addAction(self.executableAction)
+        self.listview.addAction(self.actionPlayList)
+        self.listview.addAction(self.actionRefresh)
+        self.listview.addAction(self.actionHide)
+        self.listview.addAction(self.actionFolderTerm)
+        self.listview.addAction(self.actionOpenTerm)
+        self.listview.addAction(self.actionMkExec)
         #        self.listview.addAction(self.pasteFolderAction)
 
     def enableHidden(self):
@@ -463,13 +482,13 @@ class myWindow(QMainWindow):
             self.fileModel.setFilter(QDir.NoDotAndDotDot | QDir.Hidden | QDir.AllDirs | QDir.Files)
             self.dirModel.setFilter(QDir.NoDotAndDotDot | QDir.Hidden | QDir.AllDirs)
             self.hiddenEnabled = True
-            self.hiddenAction.setChecked(True)
+            self.actionHide.setChecked(True)
             dprint("set hidden files to true")
         else:
             self.fileModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
             self.dirModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs)
             self.hiddenEnabled = False
-            self.hiddenAction.setChecked(False)
+            self.actionHide.setChecked(False)
             dprint("set hidden files to false")
 
     def openNewWin(self):
@@ -478,7 +497,7 @@ class myWindow(QMainWindow):
         path = self.dirModel.fileInfo(index).absoluteFilePath()
         theApp = sys.argv[0]
         if QDir(path).exists:
-            dprint("open '", path, "' in new window")
+            dprint("open '" + path + "' in new window")
             self.process.startDetached("python3", [theApp, path])
 
     def playPlaylist(self):
@@ -814,13 +833,13 @@ class myWindow(QMainWindow):
         path = self.fileModel.fileInfo(index).absoluteFilePath()
         self.menu = QMenu(self.listview)
         if self.listview.hasFocus():
-            self.menu.addAction(self.actionFolderCreate)
-            self.menu.addAction(self.actionOpenFile)
+            self.menu.addAction(self.actionFolderNew)
+            self.menu.addAction(self.actionFileOpen)
             self.menu.addAction(self.actionOpenText)
             self.menu.addAction(self.actionOpenTextRoot)
             self.menu.addSeparator()
             if os.path.isdir(path):
-                self.menu.addAction(self.actionNewWin)
+                self.menu.addAction(self.actionFolderNewWin)
             self.menu.addSeparator()
             self.menu.addAction(self.actionFileRename)
             self.menu.addSeparator()
@@ -828,61 +847,61 @@ class myWindow(QMainWindow):
             self.menu.addAction(self.actionFileCut)
             self.menu.addAction(self.actionFilePaste)
             #            self.menu.addAction(self.pasteFolderAction)
-            self.menu.addAction(self.terminalAction)
-            self.menu.addAction(self.startInTerminalAction)
-            self.menu.addAction(self.executableAction)
+            self.menu.addAction(self.actionFolderTerm)
+            self.menu.addAction(self.actionOpenTerm)
+            self.menu.addAction(self.actionMkExec)
             ### database viewer
             db_extension = [".sql", "db", "sqlite", "sqlite3", ".SQL", "DB", "SQLITE", "SQLITE3"]
             for ext in db_extension:
                 if ext in path:
-                    self.menu.addAction(self.dbAction)
+                    self.menu.addAction(self.actionOpenDB)
             ### html viewer
             url_extension = [".htm", ".html"]
             for ext in url_extension:
                 if ext in path:
-                    self.menu.addAction(self.urlAction)
+                    self.menu.addAction(self.actionOpenUrl)
             ### run in python
             if path.endswith(".py"):
-                self.menu.addAction(self.py2Action)
-                self.menu.addAction(self.py3Action)
+                self.menu.addAction(self.actionOpenPy2)
+                self.menu.addAction(self.actionOpenPy3)
             ### image viewer
             image_extension = [".png", "jpg", ".jpeg", ".bmp", "tif", ".tiff", ".pnm", ".svg",
                                ".exif", ".gif"]
             for ext in image_extension:
                 if ext in path or ext.upper() in path:
-                    self.menu.addAction(self.imageAction)
+                    self.menu.addAction(self.actionOpenImg)
             self.menu.addSeparator()
             self.menu.addAction(self.actionFile2Trash)
             self.menu.addAction(self.actionFileDel)
             self.menu.addSeparator()
             if ".m3u" in path:
-                self.menu.addAction(self.playlistPlayerAction)
+                self.menu.addAction(self.actionPlayList)
             extensions = [".mp3", ".mp4", "mpg", ".m4a", ".mpeg", "avi", ".mkv", ".webm",
                           ".wav", ".ogg", ".flv ", ".vob", ".ogv", ".ts", ".m2v", "m4v", "3gp", ".f4v"]
             for ext in extensions:
                 if ext in path or ext.upper() in path:
                     self.menu.addSeparator()
-                    self.menu.addAction(self.playAction)
-                    self.menu.addAction(self.playInternalAction)
+                    self.menu.addAction(self.actionPlayInt)
+                    self.menu.addAction(self.actionPlayVLC)
                     self.menu.addSeparator()
             extensions = [".mp4", "mpg", ".m4a", ".mpeg", "avi", ".mkv", ".webm",
                           ".wav", ".ogg", ".flv ", ".vob", ".ogv", ".ts", ".m2v", "m4v", "3gp", ".f4v"]
             for ext in extensions:
                 if ext in path or ext.upper() in path:
-                    self.menu.addAction(self.mp3Action)
+                    self.menu.addAction(self.actionToMp3)
                     self.menu.addSeparator()
             if ".mp3" in path:
                 self.menu.addAction(self.playlistAction)
-            self.menu.addAction(self.refreshAction)
-            self.menu.addAction(self.hiddenAction)
-            self.menu.addAction(self.zipFilesAction)
+            self.menu.addAction(self.actionRefresh)
+            self.menu.addAction(self.actionHide)
+            self.menu.addAction(self.actionFilesZip)
             zip_extension = [".zip", ".tar.gz"]
             for ext in zip_extension:
                 if ext in path:
-                    self.menu.addAction(self.unzipHereAction)
-                    self.menu.addAction(self.unzipToAction)
+                    self.menu.addAction(self.actionUnzipHere)
+                    self.menu.addAction(self.actionUnzipTo)
             self.menu.addSeparator()
-            self.menu.addAction(self.helpAction)
+            self.menu.addAction(self.actionHelp)
             self.menu.popup(QCursor.pos())
         else:
             index = self.treeview.selectionModel().currentIndex()
@@ -890,15 +909,15 @@ class myWindow(QMainWindow):
             dprint("current path is: %s" % path)
             self.menu = QMenu(self.treeview)
             if os.path.isdir(path):
-                self.menu.addAction(self.actionNewWin)
-                self.menu.addAction(self.actionFolderCreate)
+                self.menu.addAction(self.actionFolderNewWin)
+                self.menu.addAction(self.actionFolderNew)
                 self.menu.addAction(self.actionFolderRename)
                 self.menu.addAction(self.actionFolderCopy)
                 self.menu.addAction(self.actionFolderPaste)
                 self.menu.addAction(self.actionFolderDel)
-                self.menu.addAction(self.terminalAction)
-                self.menu.addAction(self.findFilesAction)
-                self.menu.addAction(self.zipAction)
+                self.menu.addAction(self.actionFolderTerm)
+                self.menu.addAction(self.actionFindFiles)
+                self.menu.addAction(self.actionFolderZip)
             self.menu.popup(QCursor.pos())
 
     def createNewFolder(self):
