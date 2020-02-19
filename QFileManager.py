@@ -41,18 +41,18 @@ else:
     Enabled.trash = True
 # 4. selfmade
 import findFilesWindow
-import QTextEdit
-import Qt5Player
-import QAudioPlayer
-import QImageViewer
+from plugin import QTextEdit
+from plugin import Qt5Player
+from plugin import QAudioPlayer
+from plugin import QImageViewer
 try:
-    import QWebViewer
+    from plugin import QWebViewer
 except ImportError:
     Enabled.webview = False
     print("Web not found", file=sys.stderr)
 else:
     Enabled.webview = True
-import QTerminalFolder
+from plugin import QTerminalFolder
 
 def dprint(s):
     print(s, file=sys.stderr)
@@ -520,7 +520,7 @@ class myWindow(QMainWindow):
 
     def showDB(self):
         if self.listview.selectionModel().hasSelection():
-            import DBViewer
+            from plugin import DBViewer
             index = self.listview.selectionModel().currentIndex()
             path = self.fileModel.fileInfo(index).absoluteFilePath()
             dprint("show image: ", path)
