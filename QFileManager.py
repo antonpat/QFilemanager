@@ -141,7 +141,7 @@ class myWindow(QMainWindow):
 
         # GUI
         self.treeview = QTreeView()
-        self.listview = QTreeView()
+        self.listview = QListView()     # QTreeView
         self.splitter = QSplitter()
         self.splitter.setOrientation(Qt.Horizontal)
         self.splitter.addWidget(self.treeview)
@@ -253,19 +253,28 @@ class myWindow(QMainWindow):
         self.fileModel.setResolveSymlinks(True)
         # - view
         self.listview.setModel(self.fileModel)
-        self.listview.header().resizeSection(0, 320)
-        self.listview.header().resizeSection(1, 80)
-        self.listview.header().resizeSection(2, 80)
-        self.listview.setSortingEnabled(True)
-        self.listview.doubleClicked.connect(self.list_doubleClicked)
+        # QTreeView
+        #self.listview.header().resizeSection(0, 320)
+        #self.listview.header().resizeSection(1, 80)
+        #self.listview.header().resizeSection(2, 80)
+        #self.listview.setSortingEnabled(True)
+        #self.listview.doubleClicked.connect(self.list_doubleClicked)
+        # /QTreeView
+        # QListView
+        # alternatingRowColors=true, , showDropIndicator=false
+        self.listview.setWrapping(True)
+        self.listview.setResizeMode(QListView.Adjust)
+        self.listview.setModelColumn(0)
+        self.listview.activated.connect(self.list_doubleClicked)
+        # /QListView
         self.listview.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.listview.setDragDropMode(QAbstractItemView.DragDrop)
         self.listview.setDragEnabled(True)
         self.listview.setAcceptDrops(True)
         self.listview.setDropIndicatorShown(True)
         self.listview.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.listview.setIndentation(10)
-        self.listview.sortByColumn(0, Qt.AscendingOrder)
+        #self.listview.setIndentation(10)
+        #self.listview.sortByColumn(0, Qt.AscendingOrder)
         # setup panels
         docs = QStandardPaths.standardLocations(QStandardPaths.DocumentsLocation)[0]
         self.treeview.setCurrentIndex(self.dirModel.index(docs))
@@ -316,13 +325,13 @@ class myWindow(QMainWindow):
         # icon, title, action
         self.actionExit = QAction(QIcon.fromTheme("quit"), "&Quit", triggered=qApp.quit)
         # go
-        self.actionGoBack = QAction(QIcon.fromTheme("go-back"), "Back", triggered=self.goBack)
-        self.actionGoUp = QAction(QIcon.fromTheme("go-up"), "Up", triggered=self.goUp)
-        self.actionGoHome = QAction(QIcon.fromTheme("go-home"), "Home", triggered=self.goHome)
+        self.actionGoBack = QAction(QIcon.fromTheme("go-back"), "&Back", triggered=self.goBack)
+        self.actionGoUp = QAction(QIcon.fromTheme("go-up"), "&Up", triggered=self.goUp)
+        self.actionGoHome = QAction(QIcon.fromTheme("go-home"), "&Home", triggered=self.goHome)
         self.actionGoDocuments = QAction(QIcon.fromTheme("folder-documents"), "Documents", triggered=self.goDocuments)
         self.actionGoDownloads = QAction(QIcon.fromTheme("folder-downloads"), "Downloads", triggered=self.goDownloads)
-        self.actionGoMusic = QAction(QIcon.fromTheme("folder-music"), "mMusic", triggered=self.goMusic)
-        self.actionGoVideo = QAction(QIcon.fromTheme("folder-video"), "Video", triggered=self.goVideo)
+        self.actionGoMusic = QAction(QIcon.fromTheme("folder-music"), "&Music", triggered=self.goMusic)
+        self.actionGoVideo = QAction(QIcon.fromTheme("folder-video"), "&Video", triggered=self.goVideo)
         #
         # folder/file manipulations
         # - common
@@ -1064,6 +1073,15 @@ class myWindow(QMainWindow):
 
 def mystylesheet(self):
     return """
+QListView
+{
+background: #e9e9e9;
+selection-color: white;
+border: 1px solid lightgrey;
+selection-background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #729fcf, stop: 1  #204a87);
+color: #202020;
+outline: 0;
+}
 QTreeView
 {
 background: #e9e9e9;
