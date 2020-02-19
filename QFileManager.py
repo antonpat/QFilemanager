@@ -54,6 +54,8 @@ else:
     Enabled.webview = True
 import QTerminalFolder
 
+def dprint(s):
+    print(s, file=sys.stderr)
 
 class helpWindow(QMainWindow):
     def __init__(self):
@@ -260,7 +262,7 @@ class myWindow(QMainWindow):
         self.listview.setIndentation(10)
         self.listview.sortByColumn(0, Qt.AscendingOrder)
 
-        print("Welcome to QFileManager")
+        dprint("Welcome to QFileManager")
         self.readSettings()
         self.enableHidden()
         self.getRowCount()
@@ -274,11 +276,11 @@ class myWindow(QMainWindow):
         return count
 
     def closeEvent(self, e):
-        print("writing settings ...\nGoodbye ...")
+        dprint("writing settings ...\nGoodbye ...")
         self.writeSettings()
 
     def readSettings(self):
-        print("reading settings ...")
+        dprint("reading settings ...")
         if self.settings.contains("pos"):
             pos = self.settings.value("pos", QPoint(200, 200))
             self.move(pos)
@@ -306,13 +308,13 @@ class myWindow(QMainWindow):
             self.dirModel.setFilter(QDir.NoDotAndDotDot | QDir.Hidden | QDir.AllDirs)
             self.hiddenEnabled = True
             self.hiddenAction.setChecked(True)
-            print("set hidden files to true")
+            dprint("set hidden files to true")
         else:
             self.fileModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
             self.dirModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs)
             self.hiddenEnabled = False
             self.hiddenAction.setChecked(False)
-            print("set hidden files to false")
+            dprint("set hidden files to false")
 
     def openNewWin(self):
         self.copyListNew = ""
@@ -320,7 +322,7 @@ class myWindow(QMainWindow):
         path = self.dirModel.fileInfo(index).absoluteFilePath()
         theApp = sys.argv[0]
         if QDir(path).exists:
-            print("open '", path, "' in new window")
+            dprint("open '", path, "' in new window")
             self.process.startDetached("python3", [theApp, path])
 
     ### actions
@@ -504,13 +506,13 @@ class myWindow(QMainWindow):
             self.player.show()
             self.player.clearList()
             self.player.openOnStart(path)
-            print("added Files to playlist")
+            dprint("added Files to playlist")
 
     def showImage(self):
         if self.listview.selectionModel().hasSelection():
             index = self.listview.selectionModel().currentIndex()
             path = self.fileModel.fileInfo(index).absoluteFilePath()
-            print("show image: ", path)
+            dprint("show image: " + path)
             self.win = QImageViewer.ImageViewer()
             self.win.show()
             self.win.filename = path
@@ -521,7 +523,7 @@ class myWindow(QMainWindow):
             import DBViewer
             index = self.listview.selectionModel().currentIndex()
             path = self.fileModel.fileInfo(index).absoluteFilePath()
-            print("show image: ", path)
+            dprint("show image: ", path)
             self.db_win = DBViewer.MyWindow()
             self.db_win.show()
             self.db_win.fileOpenStartup(path)
@@ -529,9 +531,9 @@ class myWindow(QMainWindow):
     def checkIsApplication(self, path):
         st = subprocess.check_output("file  --mime-type '" + path + "'", stderr=subprocess.STDOUT,
                                      universal_newlines=True, shell=True)
-        print(st)
+        dprint(st)
         if "application/x-executable" in st:
-            print(path, "is an application")
+            dprint(path + " is an application")
             return True
         else:
             return False
@@ -540,7 +542,7 @@ class myWindow(QMainWindow):
         if self.listview.selectionModel().hasSelection():
             index = self.listview.selectionModel().currentIndex()
             path = self.fileModel.fileInfo(index).absoluteFilePath()
-            print("set", path, "executable")
+            dprint("set " + path + " executable")
             st = os.stat(path)
             os.chmod(path, st.st_mode | stat.S_IEXEC)
 
@@ -590,7 +592,7 @@ class myWindow(QMainWindow):
         index = self.treeview.selectionModel().currentIndex()
         path = self.dirModel.fileInfo(index).filePath()
         fname = self.dirModel.fileInfo(index).fileName()
-        print("folder to zip:", path)
+        dprint("folder to zip:" + path)
         self.copyFile()
         target, _ = QFileDialog.getSaveFileName(self, "Save as... (do not add .zip)", path + "/" + fname,
                                                 "zip files (*.zip)")
@@ -602,7 +604,7 @@ class myWindow(QMainWindow):
             index = self.treeview.selectionModel().currentIndex()
             path = self.dirModel.fileInfo(index).filePath()
             fname = self.dirModel.fileInfo(index).fileName()
-            print("folder to zip:", path)
+            dprint("folder to zip:" + path)
             self.copyFile()
             target, _ = QFileDialog.getSaveFileName(self, "Save as...", path + "/" + "archive.zip", "zip files (*.zip)")
             if (target != ""):
@@ -631,17 +633,17 @@ class myWindow(QMainWindow):
                 zipObj.extractall(dirpath)
 
     def findFiles(self):
-        print("find")
+        dprint("find")
         index = self.treeview.selectionModel().currentIndex()
         path = self.dirModel.fileInfo(index).absoluteFilePath()
-        print("open findWindow")
+        dprint("open findWindow")
         self.w = findFilesWindow.ListBox()
         self.w.show()
         self.w.folderEdit.setText(path)
         self.w.findEdit.setText(self.findfield.text())
 
     def refreshList(self):
-        print("refreshing view")
+        dprint("refreshing view")
         index = self.listview.selectionModel().currentIndex()
         path = self.fileModel.fileInfo(index).path()
         self.treeview.setCurrentIndex(self.fileModel.index(path))
@@ -653,10 +655,10 @@ class myWindow(QMainWindow):
             path = self.fileModel.fileInfo(index).filePath()
             ext = self.fileModel.fileInfo(index).suffix()
             newpath = path.replace("." + ext, ".mp3")
-            print(ext)
+            dprint(ext)
             self.statusBar().showMessage("%s '%s'" % ("converting:", path))
             self.process.startDetached("ffmpeg", ["-i", path, newpath])
-            print("%s '%s'" % ("converting", path))
+            dprint("%s '%s'" % ("converting", path))
 
     def makePlaylist(self):
         if self.listview.selectionModel().hasSelection():
@@ -682,7 +684,7 @@ class myWindow(QMainWindow):
     def showHelp(self):
         top = self.y() + 26
         left = self.width() / 2 - 100
-        print(top)
+        dprint(top)
         self.w = helpWindow()
         self.w.setWindowFlags(Qt.FramelessWindowHint)
         self.w.setWindowModality(Qt.ApplicationModal)
@@ -716,7 +718,7 @@ class myWindow(QMainWindow):
             path = self.fileModel.fileInfo(index).absoluteFilePath()
             self.copyFile()
             for files in self.copyList:
-                print("%s '%s'" % ("open file", files))
+                dprint("%s '%s'" % ("open file", files))
                 if self.checkIsApplication(path) == True:
                     self.process.startDetached(files)
                 else:
@@ -746,7 +748,7 @@ class myWindow(QMainWindow):
             self.player = Qt5Player.VideoPlayer('')
             self.player.show()
             self.player.loadFilm(path)
-            print("%s '%s'" % ("playing", path))
+            dprint("%s '%s'" % ("playing", path))
 
     def playMedia(self):
         if self.listview.selectionModel().hasSelection():
@@ -754,7 +756,7 @@ class myWindow(QMainWindow):
             path = self.fileModel.fileInfo(index).filePath()
             self.statusBar().showMessage("%s '%s'" % ("file:", path))
             self.process.startDetached("cvlc", [path])
-            print("%s '%s'" % ("playing with vlc:", path))
+            dprint("%s '%s'" % ("playing with vlc:", path))
 
     def showURL(self):
         if not Enabled.webview:
@@ -790,7 +792,7 @@ class myWindow(QMainWindow):
     def goUp(self):
         index = self.treeview.selectionModel().currentIndex()
         path = self.dirModel.fileInfo(index).path()
-        print(path)
+        dprint(path)
         self.treeview.setCurrentIndex(self.dirModel.index(path))
 
     def goHome(self):
@@ -901,7 +903,7 @@ class myWindow(QMainWindow):
         else:
             index = self.treeview.selectionModel().currentIndex()
             path = self.dirModel.fileInfo(index).absoluteFilePath()
-            print("current path is:", path)
+            dprint("current path is: %s" % path)
             self.menu = QMenu(self.treeview)
             if os.path.isdir(path):
                 self.menu.addAction(self.newWinAction)
@@ -944,7 +946,7 @@ class myWindow(QMainWindow):
                 index = self.listview.selectionModel().currentIndex()
                 path = self.fileModel.fileInfo(index).absoluteFilePath()
                 basepath = self.fileModel.fileInfo(index).path()
-                print(basepath)
+                dprint(basepath)
                 oldName = self.fileModel.fileInfo(index).fileName()
                 dlg = QInputDialog()
                 newName, ok = dlg.getText(self, 'new Name:', path, QLineEdit.Normal, oldName, Qt.Dialog)
@@ -958,13 +960,13 @@ class myWindow(QMainWindow):
         index = self.treeview.selectionModel().currentIndex()
         path = self.dirModel.fileInfo(index).absoluteFilePath()
         basepath = self.dirModel.fileInfo(index).path()
-        print("pasepath:", basepath)
+        dprint("pasepath: %s" % basepath)
         oldName = self.dirModel.fileInfo(index).fileName()
         dlg = QInputDialog()
         newName, ok = dlg.getText(self, 'new Name:', path, QLineEdit.Normal, oldName, Qt.Dialog)
         if ok:
             newpath = basepath + "/" + newName
-            print(newpath)
+            dprint(newpath)
             nd = QDir(path)
             check = nd.rename(path, newpath)
 
@@ -974,15 +976,15 @@ class myWindow(QMainWindow):
         count = len(selected)
         for index in selected:
             path = self.currentPath + "/" + self.fileModel.data(index, self.fileModel.FileNameRole)
-            print(path, "copied to clipboard")
+            dprint(path + " copied to clipboard")
             self.copyList.append(path)
             self.clip.setText('\n'.join(self.copyList))
-        print("%s\n%s" % ("filepath(s) copied:", '\n'.join(self.copyList)))
+        dprint("%s\n%s" % ("filepath(s) copied:", '\n'.join(self.copyList)))
 
     def copyFolder(self):
         index = self.treeview.selectionModel().currentIndex()
         folderpath = self.dirModel.fileInfo(index).absoluteFilePath()
-        print("%s\n%s" % ("folderpath copied:", folderpath))
+        dprint("%s\n%s" % ("folderpath copied:", folderpath))
         self.folder_copied = folderpath
         self.copyList = []
 
@@ -990,7 +992,7 @@ class myWindow(QMainWindow):
         index = self.treeview.selectionModel().currentIndex()
         target = self.folder_copied
         destination = self.dirModel.fileInfo(index).absoluteFilePath() + "/" + QFileInfo(self.folder_copied).fileName()
-        print("%s %s %s" % (target, "will be pasted to", destination))
+        dprint("%s %s %s" % (target, "will be pasted to", destination))
         try:
             shutil.copytree(target, destination)
         except OSError as e:
@@ -1005,9 +1007,9 @@ class myWindow(QMainWindow):
             index = self.treeview.selectionModel().currentIndex()
             file_index = self.listview.selectionModel().currentIndex()
             for target in self.copyList:
-                print(target)
+                dprint(target)
                 destination = self.dirModel.fileInfo(index).absoluteFilePath() + "/" + QFileInfo(target).fileName()
-                print("%s %s" % ("pasted File to", destination))
+                dprint("%s %s" % ("pasted File to", destination))
                 QFile.copy(target, destination)
                 if self.cut == True:
                     QFile.remove(target)
@@ -1024,7 +1026,7 @@ class myWindow(QMainWindow):
                 if e.errno == errno.ENOTDIR:
                     shutil.copy(target, destination)
                 else:
-                    print('Directory not copied. Error: %s' % e)
+                    dprint('Directory not copied. Error: %s' % e)
 
     def cutFile(self):
         self.cut = True
@@ -1036,27 +1038,27 @@ class myWindow(QMainWindow):
         msg = QMessageBox.question(self, "Info", "Caution!\nReally delete this Folder?\n" + delFolder,
                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         if msg == QMessageBox.Yes:
-            print('Deletion confirmed.')
+            dprint('Deletion confirmed.')
             self.statusBar().showMessage("%s %s" % ("folder deleted", delFolder), 0)
             self.fileModel.remove(index)
-            print("%s %s" % ("folder deleted", delFolder))
+            dprint("%s %s" % ("folder deleted", delFolder))
         else:
-            print('No clicked.')
+            dprint('No clicked.')
 
     def deleteFile(self):
         self.copyFile()
         msg = QMessageBox.question(self, "Info", "Caution!\nReally delete this Files?\n" + '\n'.join(self.copyList),
                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         if msg == QMessageBox.Yes:
-            print('Deletion confirmed.')
+            dprint('Deletion confirmed.')
             index = self.listview.selectionModel().currentIndex()
             self.copyPath = self.fileModel.fileInfo(index).absoluteFilePath()
-            print("%s %s" % ("file deleted", self.copyPath))
+            dprint("%s %s" % ("file deleted", self.copyPath))
             self.statusBar().showMessage("%s %s" % ("file deleted", self.copyPath), 0)
             for delFile in self.listview.selectionModel().selectedIndexes():
                 self.fileModel.remove(delFile)
         else:
-            print('No clicked.')
+            dprint('No clicked.')
 
     def deleteFileTrash(self):
         if not Enabled.trash:
@@ -1068,16 +1070,16 @@ class myWindow(QMainWindow):
                                    "Caution!\nReally move this Files to Trash\n" + '\n'.join(self.copyList),
                                    QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         if msg == QMessageBox.Yes:
-            print('Deletion confirmed.')
+            dprint('Deletion confirmed.')
             for delFile in self.copyList:
                 try:
                     send2trash(delFile)
                 except OSError as e:
                     self.infobox(str(e))
-                print("%s %s" % ("file moved to trash:", delFile))
+                dprint("%s %s" % ("file moved to trash:", delFile))
                 self.statusBar().showMessage("%s %s" % ("file moved to trash:", delFile), 0)
         else:
-            print('No clicked.')
+            dprint('No clicked.')
 
     def createStatusBar(self):
         sysinfo = QSysInfo()
@@ -1198,7 +1200,7 @@ if __name__ == '__main__':
     w.show()
     if len(sys.argv) > 1:
         path = sys.argv[1]
-        print(path)
+        dprint(path)
         w.listview.setRootIndex(w.fileModel.setRootPath(path))
         w.treeview.setRootIndex(w.dirModel.setRootPath(path))
         w.setWindowTitle(path)
