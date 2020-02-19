@@ -127,50 +127,41 @@ class myWindow(QMainWindow):
         self.setWindowTitle("Filemanager")
         self.setWindowIcon(QIcon.fromTheme("system- file-manager"))
         self.process = QProcess()
+        self.clip = QApplication.clipboard()
 
         self.settings = QSettings("QFileManager", "QFileManager")
-        self.clip = QApplication.clipboard()
         self.isInEditMode = False
-
-        self.treeview = QTreeView()
-        self.listview = QTreeView()
-
         self.cut = False
         self.hiddenEnabled = False
         self.folder_copied = ""
+        self.copyPath = ""
+        self.copyList = []
+        self.copyListNew = ""
+        path = QDir.rootPath()
 
+        # GUI
+        self.treeview = QTreeView()
+        self.listview = QTreeView()
         self.splitter = QSplitter()
         self.splitter.setOrientation(Qt.Horizontal)
         self.splitter.addWidget(self.treeview)
         self.splitter.addWidget(self.listview)
-
+        self.splitter.setSizes([20, 160])
         hlay = QHBoxLayout()
         hlay.addWidget(self.splitter)
-
         wid = QWidget()
         wid.setLayout(hlay)
         self.createStatusBar()
         self.setCentralWidget(wid)
         self.setGeometry(0, 26, 900, 500)
 
-        path = QDir.rootPath()
-        self.copyPath = ""
-        self.copyList = []
-        self.copyListNew = ""
-
         self.createActions()
 
-        self.findfield = QLineEdit()
-        self.findfield.addAction(QIcon.fromTheme("edit-find"), QLineEdit.LeadingPosition)
-        self.findfield.setClearButtonEnabled(True)
-        self.findfield.setFixedWidth(150)
-        self.findfield.setPlaceholderText("find")
-        self.findfield.setToolTip("press RETURN to find")
-        self.findfield.setText("")
-        self.findfield.returnPressed.connect(self.findFiles)
-
-        self.findfield.installEventFilter(self)
-
+        # main menu
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('&File')
+        fileMenu.addAction(self.actionExit)
+        # toolbar
         self.tBar = self.addToolBar("Tools")
         self.tBar.setContextMenuPolicy(Qt.PreventContextMenu)
         self.tBar.setMovable(False)
@@ -195,51 +186,44 @@ class myWindow(QMainWindow):
         empty.setMinimumWidth(60)
         self.tBar.addWidget(empty)
         self.tBar.addSeparator()
-        self.tBar.addAction(self.btnHome)
-        self.tBar.addAction(self.btnDocuments)
-        self.tBar.addAction(self.btnDownloads)
-        self.tBar.addAction(self.btnMusic)
-        self.tBar.addAction(self.btnVideo)
+        self.tBar.addAction(self.actionGoHome)
+        self.tBar.addAction(self.actionGoDocuments)
+        self.tBar.addAction(self.actionGoDownloads)
+        self.tBar.addAction(self.actionGoMusic)
+        self.tBar.addAction(self.actionGoVideo)
         self.tBar.addSeparator()
-        self.tBar.addAction(self.btnBack)
-        self.tBar.addAction(self.btnUp)
-
+        self.tBar.addAction(self.actionGoBack)
+        self.tBar.addAction(self.actionGoUp)
+        # (fast find)
+        self.findfield = QLineEdit()
+        self.findfield.addAction(QIcon.fromTheme("edit-find"), QLineEdit.LeadingPosition)
+        self.findfield.setClearButtonEnabled(True)
+        self.findfield.setFixedWidth(150)
+        self.findfield.setPlaceholderText("find")
+        self.findfield.setToolTip("press RETURN to find")
+        self.findfield.setText("")
+        self.findfield.returnPressed.connect(self.findFiles)
+        self.findfield.installEventFilter(self)
         self.tBar.addWidget(self.findfield)
+        # /toolbar
 
+        # tree panel
+        # - model
         self.dirModel = QFileSystemModel()
         self.dirModel.setReadOnly(False)
         self.dirModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Drives)
         self.dirModel.setRootPath(QDir.rootPath())
-
-        self.fileModel = QFileSystemModel()
-        self.fileModel.setReadOnly(False)
-        self.fileModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
-        self.fileModel.setResolveSymlinks(True)
-
+        # - view
         self.treeview.setModel(self.dirModel)
         self.treeview.hideColumn(1)
         self.treeview.hideColumn(2)
         self.treeview.hideColumn(3)
-
-        self.listview.setModel(self.fileModel)
         self.treeview.setRootIsDecorated(True)
-
-        self.listview.header().resizeSection(0, 320)
-        self.listview.header().resizeSection(1, 80)
-        self.listview.header().resizeSection(2, 80)
-        self.listview.setSortingEnabled(True)
         self.treeview.setSortingEnabled(True)
-
         self.treeview.setRootIndex(self.dirModel.index(path))
-
         #        self.treeview.clicked.connect(self.on_clicked)
         self.treeview.selectionModel().selectionChanged.connect(self.on_selectionChanged)
-        self.listview.doubleClicked.connect(self.list_doubleClicked)
-
-        docs = QStandardPaths.standardLocations(QStandardPaths.DocumentsLocation)[0]
-        self.treeview.setCurrentIndex(self.dirModel.index(docs))
         #        self.treeview.expand(self.treeview.currentIndex())
-
         self.treeview.setTreePosition(0)
         self.treeview.setUniformRowHeights(True)
         self.treeview.setExpandsOnDoubleClick(True)
@@ -250,9 +234,19 @@ class myWindow(QMainWindow):
         self.treeview.setAcceptDrops(True)
         self.treeview.setDropIndicatorShown(True)
         self.treeview.sortByColumn(0, Qt.AscendingOrder)
-
-        self.splitter.setSizes([20, 160])
-
+        # files panel
+        # - model
+        self.fileModel = QFileSystemModel()
+        self.fileModel.setReadOnly(False)
+        self.fileModel.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
+        self.fileModel.setResolveSymlinks(True)
+        # - view
+        self.listview.setModel(self.fileModel)
+        self.listview.header().resizeSection(0, 320)
+        self.listview.header().resizeSection(1, 80)
+        self.listview.header().resizeSection(2, 80)
+        self.listview.setSortingEnabled(True)
+        self.listview.doubleClicked.connect(self.list_doubleClicked)
         self.listview.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.listview.setDragDropMode(QAbstractItemView.DragDrop)
         self.listview.setDragEnabled(True)
@@ -261,24 +255,20 @@ class myWindow(QMainWindow):
         self.listview.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.listview.setIndentation(10)
         self.listview.sortByColumn(0, Qt.AscendingOrder)
+        # setup panels
+        docs = QStandardPaths.standardLocations(QStandardPaths.DocumentsLocation)[0]
+        self.treeview.setCurrentIndex(self.dirModel.index(docs))
 
         dprint("Welcome to QFileManager")
         self.readSettings()
         self.enableHidden()
         self.getRowCount()
 
-    def getRowCount(self):
-        count = 0
-        index = self.treeview.selectionModel().currentIndex()
-        path = QDir(self.dirModel.fileInfo(index).absoluteFilePath())
-        count = len(path.entryList(QDir.Files))
-        self.statusBar().showMessage("%s %s" % (count, "Files"), 0)
-        return count
-
     def closeEvent(self, e):
         dprint("writing settings ...\nGoodbye ...")
         self.writeSettings()
 
+    ### utilities
     def readSettings(self):
         dprint("reading settings ...")
         if self.settings.contains("pos"):
@@ -302,6 +292,147 @@ class myWindow(QMainWindow):
         self.settings.setValue("size", self.size())
         self.settings.setValue("hiddenEnabled", self.hiddenEnabled, )
 
+    def getRowCount(self):
+        count = 0
+        index = self.treeview.selectionModel().currentIndex()
+        path = QDir(self.dirModel.fileInfo(index).absoluteFilePath())
+        count = len(path.entryList(QDir.Files))
+        self.statusBar().showMessage("%s %s" % (count, "Files"), 0)
+        return count
+
+    ### actions
+    def createActions(self):
+        # icon,
+        self.actionExit = QAction(QIcon.fromTheme("quit"), "exit", triggered=qApp.quit)
+        self.actionGoBack = QAction(QIcon.fromTheme("go-previous"), "go back", triggered=self.goBack)
+        self.actionGoUp = QAction(QIcon.fromTheme("go-up"), "go up", triggered=self.goUp)
+        self.actionGoHome = QAction(QIcon.fromTheme("go-home"), "home folder", triggered=self.goHome)
+        self.actionGoMusic = QAction(QIcon.fromTheme("folder-music"), "music folder", triggered=self.goMusic)
+        self.actionGoDocuments = QAction(QIcon.fromTheme("folder-documents"), "documents folder", triggered=self.goDocuments)
+        self.actionGoDownloads = QAction(QIcon.fromTheme("folder-downloads"), "downloads folder", triggered=self.goDownloads)
+        self.actionGoVideo = QAction(QIcon.fromTheme("folder-video"), "video folder", triggered=self.goVideo)
+        self.actionOpenFile = QAction(QIcon.fromTheme("system-run"), "open File", triggered=self.openFile)
+        self.actionNewWin = QAction(QIcon.fromTheme("folder-new"), "open in new window", triggered=self.openNewWin)
+        self.actionOpenText = QAction(QIcon.fromTheme("system-run"), "open File with built-in Texteditor", triggered=self.openFileText)
+        self.actionOpenTextRoot = QAction(QIcon.fromTheme("applications-system"), "edit as root", triggered=self.openFileTextRoot)
+        self.actionRenameFile = QAction(QIcon.fromTheme("accessories-text-editor"), "rename File", triggered=self.renameFile)
+        self.actionRenameFolder = QAction(QIcon.fromTheme("accessories-text-editor"), "rename Folder", triggered=self.renameFolder)
+        self.copyAction = QAction(QIcon.fromTheme("edit-copy"), "copy File(s)", triggered=self.copyFile)
+        self.copyFolderAction = QAction(QIcon.fromTheme("edit-copy"), "copy Folder", triggered=self.copyFolder)
+        self.pasteFolderAction = QAction(QIcon.fromTheme("edit-paste"), "paste Folder", triggered=self.pasteFolder)
+        self.cutAction = QAction(QIcon.fromTheme("edit-cut"), "cut File(s)", triggered=self.cutFile)
+        self.pasteAction = QAction(QIcon.fromTheme("edit-paste"), "paste File(s) / Folder", triggered=self.pasteFile)
+        self.delAction = QAction(QIcon.fromTheme("edit-delete"), "delete File(s)", triggered=self.deleteFile)
+        self.delFolderAction = QAction(QIcon.fromTheme("edit-delete"), "delete Folder", triggered=self.deleteFolder)
+        self.delActionTrash = QAction(QIcon.fromTheme("user-trash"), "move to trash", triggered=self.deleteFileTrash)
+        self.imageAction = QAction(QIcon.fromTheme("image-x-generic"), "show Image", triggered=self.showImage)
+        self.urlAction = QAction(QIcon.fromTheme("browser"), "preview Page", triggered=self.showURL)
+        self.dbAction = QAction(QIcon.fromTheme("image-x-generic"), "show Database", triggered=self.showDB)
+        self.py2Action = QAction(QIcon.fromTheme("python"), "run in python", triggered=self.runPy2)
+        self.py3Action = QAction(QIcon.fromTheme("python3"), "run in python3", triggered=self.runPy3)
+        self.findFilesAction = QAction(QIcon.fromTheme("edit-find"), "find in folder", triggered=self.findFiles)
+        self.zipAction = QAction(QIcon.fromTheme("zip"), "create zip from folder", triggered=self.createZipFromFolder)
+        self.zipFilesAction = QAction(QIcon.fromTheme("zip"), "create zip from selected files", triggered=self.createZipFromFiles)
+        self.unzipHereAction = QAction(QIcon.fromTheme("application-zip"), "extract here ...", triggered=self.unzipHere)
+        self.unzipToAction = QAction(QIcon.fromTheme("application-zip"), "extract to ...", triggered=self.unzipTo)
+        self.playAction = QAction(QIcon.fromTheme("multimedia-player"), "play with Qt5Player", triggered=self.playInternal)
+        self.playInternalAction = QAction(QIcon.fromTheme("vlc"), "play with vlc", triggered=self.playMedia)
+        self.mp3Action = QAction(QIcon.fromTheme("audio-x-generic"), "convert to mp3", triggered=self.makeMP3)
+        self.playlistAction = QAction(QIcon.fromTheme("audio-x-generic"), "make playlist from all mp3 files", triggered=self.makePlaylist)
+        self.playlistPlayerAction = QAction(QIcon.fromTheme("audio-x-generic"), "play Playlist", triggered=self.playPlaylist)
+        self.refreshAction = QAction(QIcon.fromTheme("view-refresh"), "refresh View", triggered=self.refreshList, shortcut="F5")
+        self.hiddenAction = QAction("show hidden Files", triggered=self.enableHidden)
+        self.goBackAction = QAction(QIcon.fromTheme("go-back"), "go back", triggered=self.goBack)
+        self.helpAction = QAction(QIcon.fromTheme("help"), "Help", triggered=self.showHelp)
+        self.terminalAction = QAction(QIcon.fromTheme("terminal"), "open folder in Terminal", triggered=self.showInTerminal)
+        self.startInTerminalAction = QAction(QIcon.fromTheme("terminal"), "execute in Terminal", triggered=self.startInTerminal)
+        self.executableAction = QAction(QIcon.fromTheme("applications-utilities"), "make executable", triggered=self.makeExecutable)
+        self.createFolderAction = QAction(QIcon.fromTheme("folder-new"), "create new Folder", triggered=self.createNewFolder)
+
+        # shortcuts
+        self.actionOpenFile.setShortcut(QKeySequence(Qt.Key_Return))
+        self.actionNewWin.setShortcut(QKeySequence("Ctrl+n"))
+        self.actionOpenText.setShortcut(QKeySequence(Qt.Key_F6))
+        self.actionRenameFile.setShortcut(QKeySequence(Qt.Key_F2))
+        self.copyAction.setShortcut(QKeySequence("Ctrl+c"))
+        self.cutAction.setShortcut(QKeySequence("Ctrl+x"))
+        self.pasteAction.setShortcut(QKeySequence("Ctrl+v"))
+        self.delAction.setShortcut(QKeySequence("Shift+Del"))
+        self.delActionTrash.setShortcut(QKeySequence("Del"))
+        self.findFilesAction.setShortcut(QKeySequence("Ctrl+f"))
+        self.playAction.setShortcut(QKeySequence(Qt.Key_F3))
+        self.hiddenAction.setShortcut(QKeySequence("Ctrl+h"))
+        self.goBackAction.setShortcut(QKeySequence(Qt.Key_Backspace))
+        self.helpAction.setShortcut(QKeySequence(Qt.Key_F1))
+        self.terminalAction.setShortcut(QKeySequence(Qt.Key_F7))
+        self.startInTerminalAction.setShortcut(QKeySequence(Qt.Key_F8))
+        self.createFolderAction.setShortcut(QKeySequence("Shift+Ctrl+n"))
+
+        # context visibility
+        self.actionOpenFile.setShortcutVisibleInContextMenu(True)
+        self.actionNewWin.setShortcutVisibleInContextMenu(True)
+        self.actionOpenText.setShortcutVisibleInContextMenu(True)
+        self.actionRenameFile.setShortcutVisibleInContextMenu(True)
+        self.copyAction.setShortcutVisibleInContextMenu(True)
+        self.cutAction.setShortcutVisibleInContextMenu(True)
+        self.pasteAction.setShortcutVisibleInContextMenu(True)
+        self.delAction.setShortcutVisibleInContextMenu(True)
+        self.delActionTrash.setShortcutVisibleInContextMenu(True)
+        self.findFilesAction.setShortcutVisibleInContextMenu(True)
+        self.playAction.setShortcutVisibleInContextMenu(True)
+        self.refreshAction.setShortcutVisibleInContextMenu(True)
+        self.hiddenAction.setShortcutVisibleInContextMenu(True)
+        self.hiddenAction.setCheckable(True)
+        self.goBackAction.setShortcutVisibleInContextMenu(True)
+        self.helpAction.setShortcutVisibleInContextMenu(True)
+        self.terminalAction.setShortcutVisibleInContextMenu(True)
+        self.startInTerminalAction.setShortcutVisibleInContextMenu(True)
+        self.createFolderAction.setShortcutVisibleInContextMenu(True)
+
+        # tree context
+        self.treeview.addAction(self.actionRenameFile)
+        self.treeview.addAction(self.actionRenameFolder)
+        self.treeview.addAction(self.copyFolderAction)
+        self.treeview.addAction(self.pasteFolderAction)
+        self.treeview.addAction(self.delFolderAction)
+        self.treeview.addAction(self.findFilesAction)
+        self.treeview.addAction(self.zipAction)
+        self.treeview.addAction(self.terminalAction)
+        self.treeview.addAction(self.createFolderAction)
+
+        # files context
+        self.listview.addAction(self.actionOpenFile)
+        self.listview.addAction(self.actionNewWin)
+        self.listview.addAction(self.actionOpenText)
+        self.listview.addAction(self.actionOpenTextRoot)
+        self.listview.addAction(self.actionRenameFile)
+        self.listview.addAction(self.copyAction)
+        self.listview.addAction(self.cutAction)
+        self.listview.addAction(self.pasteAction)
+        self.listview.addAction(self.delAction)
+        self.listview.addAction(self.delActionTrash)
+        self.listview.addAction(self.imageAction)
+        self.listview.addAction(self.urlAction)
+        self.listview.addAction(self.dbAction)
+        self.listview.addAction(self.py2Action)
+        self.listview.addAction(self.py3Action)
+        self.listview.addAction(self.zipFilesAction)
+        self.listview.addAction(self.unzipHereAction)
+        self.listview.addAction(self.unzipToAction)
+        self.listview.addAction(self.playAction)
+        self.listview.addAction(self.playInternalAction)
+        self.listview.addAction(self.mp3Action)
+        self.listview.addAction(self.playlistAction)
+        self.listview.addAction(self.playlistPlayerAction)
+        self.listview.addAction(self.refreshAction)
+        self.listview.addAction(self.hiddenAction)
+        self.listview.addAction(self.goBackAction)
+        self.listview.addAction(self.helpAction)
+        self.listview.addAction(self.terminalAction)
+        self.listview.addAction(self.startInTerminalAction)
+        self.listview.addAction(self.executableAction)
+        #        self.listview.addAction(self.pasteFolderAction)
+
     def enableHidden(self):
         if self.hiddenEnabled == False:
             self.fileModel.setFilter(QDir.NoDotAndDotDot | QDir.Hidden | QDir.AllDirs | QDir.Files)
@@ -324,178 +455,6 @@ class myWindow(QMainWindow):
         if QDir(path).exists:
             dprint("open '", path, "' in new window")
             self.process.startDetached("python3", [theApp, path])
-
-    ### actions
-    def createActions(self):
-        self.btnBack = QAction(QIcon.fromTheme("go-previous"), "go back", triggered=self.goBack)
-        self.btnUp = QAction(QIcon.fromTheme("go-up"), "go up", triggered=self.goUp)
-        self.btnHome = QAction(QIcon.fromTheme("go-home"), "home folder", triggered=self.goHome)
-        self.btnMusic = QAction(QIcon.fromTheme("folder-music"), "music folder", triggered=self.goMusic)
-        self.btnDocuments = QAction(QIcon.fromTheme("folder-documents"), "documents folder", triggered=self.goDocuments)
-        self.btnDownloads = QAction(QIcon.fromTheme("folder-downloads"), "downloads folder", triggered=self.goDownloads)
-        self.btnVideo = QAction(QIcon.fromTheme("folder-video"), "video folder", triggered=self.goVideo)
-        self.openAction = QAction(QIcon.fromTheme("system-run"), "open File", triggered=self.openFile)
-        self.openAction.setShortcut(QKeySequence(Qt.Key_Return))
-        self.openAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.openAction)
-
-        self.newWinAction = QAction(QIcon.fromTheme("folder-new"), "open in new window", triggered=self.openNewWin)
-        self.newWinAction.setShortcut(QKeySequence("Ctrl+n"))
-        self.newWinAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.newWinAction)
-
-        self.openActionText = QAction(QIcon.fromTheme("system-run"), "open File with built-in Texteditor",
-                                      triggered=self.openFileText)
-        self.openActionText.setShortcut(QKeySequence(Qt.Key_F6))
-        self.openActionText.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.openActionText)
-
-        self.openActionTextRoot = QAction(QIcon.fromTheme("applications-system"), "edit as root",
-                                          triggered=self.openFileTextRoot)
-        self.listview.addAction(self.openActionTextRoot)
-
-        self.renameAction = QAction(QIcon.fromTheme("accessories-text-editor"), "rename File",
-                                    triggered=self.renameFile)
-        self.renameAction.setShortcut(QKeySequence(Qt.Key_F2))
-        self.renameAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.renameAction)
-        self.treeview.addAction(self.renameAction)
-
-        self.renameFolderAction = QAction(QIcon.fromTheme("accessories-text-editor"), "rename Folder",
-                                          triggered=self.renameFolder)
-        self.treeview.addAction(self.renameFolderAction)
-
-        self.copyAction = QAction(QIcon.fromTheme("edit-copy"), "copy File(s)", triggered=self.copyFile)
-        self.copyAction.setShortcut(QKeySequence("Ctrl+c"))
-        self.copyAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.copyAction)
-
-        self.copyFolderAction = QAction(QIcon.fromTheme("edit-copy"), "copy Folder", triggered=self.copyFolder)
-        self.treeview.addAction(self.copyFolderAction)
-
-        self.pasteFolderAction = QAction(QIcon.fromTheme("edit-paste"), "paste Folder", triggered=self.pasteFolder)
-        self.treeview.addAction(self.pasteFolderAction)
-        #        self.listview.addAction(self.pasteFolderAction)
-
-        self.cutAction = QAction(QIcon.fromTheme("edit-cut"), "cut File(s)", triggered=self.cutFile)
-        self.cutAction.setShortcut(QKeySequence("Ctrl+x"))
-        self.cutAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.cutAction)
-
-        self.pasteAction = QAction(QIcon.fromTheme("edit-paste"), "paste File(s) / Folder", triggered=self.pasteFile)
-        self.pasteAction.setShortcut(QKeySequence("Ctrl+v"))
-        self.pasteAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.pasteAction)
-
-        self.delAction = QAction(QIcon.fromTheme("edit-delete"), "delete File(s)", triggered=self.deleteFile)
-        self.delAction.setShortcut(QKeySequence("Shift+Del"))
-        self.delAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.delAction)
-
-        self.delFolderAction = QAction(QIcon.fromTheme("edit-delete"), "delete Folder", triggered=self.deleteFolder)
-        self.treeview.addAction(self.delFolderAction)
-
-        self.delActionTrash = QAction(QIcon.fromTheme("user-trash"), "move to trash", triggered=self.deleteFileTrash)
-        self.delActionTrash.setShortcut(QKeySequence("Del"))
-        self.delActionTrash.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.delActionTrash)
-
-        self.imageAction = QAction(QIcon.fromTheme("image-x-generic"), "show Image", triggered=self.showImage)
-        self.listview.addAction(self.imageAction)
-
-        self.urlAction = QAction(QIcon.fromTheme("browser"), "preview Page", triggered=self.showURL)
-        self.listview.addAction(self.urlAction)
-
-        self.dbAction = QAction(QIcon.fromTheme("image-x-generic"), "show Database", triggered=self.showDB)
-        self.listview.addAction(self.dbAction)
-
-        self.py2Action = QAction(QIcon.fromTheme("python"), "run in python", triggered=self.runPy2)
-        self.listview.addAction(self.py2Action)
-
-        self.py3Action = QAction(QIcon.fromTheme("python3"), "run in python3", triggered=self.runPy3)
-        self.listview.addAction(self.py3Action)
-
-        self.findFilesAction = QAction(QIcon.fromTheme("edit-find"), "find in folder", triggered=self.findFiles)
-        self.findFilesAction.setShortcut(QKeySequence("Ctrl+f"))
-        self.findFilesAction.setShortcutVisibleInContextMenu(True)
-        self.treeview.addAction(self.findFilesAction)
-
-        self.zipAction = QAction(QIcon.fromTheme("zip"), "create zip from folder", triggered=self.createZipFromFolder)
-        self.treeview.addAction(self.zipAction)
-
-        self.zipFilesAction = QAction(QIcon.fromTheme("zip"), "create zip from selected files",
-                                      triggered=self.createZipFromFiles)
-        self.listview.addAction(self.zipFilesAction)
-
-        self.unzipHereAction = QAction(QIcon.fromTheme("application-zip"), "extract here ...", triggered=self.unzipHere)
-        self.listview.addAction(self.unzipHereAction)
-
-        self.unzipToAction = QAction(QIcon.fromTheme("application-zip"), "extract to ...", triggered=self.unzipTo)
-        self.listview.addAction(self.unzipToAction)
-
-        self.playAction = QAction(QIcon.fromTheme("multimedia-player"), "play with Qt5Player",
-                                  triggered=self.playInternal)
-        self.playAction.setShortcut(QKeySequence(Qt.Key_F3))
-        self.playAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.playAction)
-
-        self.playInternalAction = QAction(QIcon.fromTheme("vlc"), "play with vlc", triggered=self.playMedia)
-        self.listview.addAction(self.playInternalAction)
-
-        self.mp3Action = QAction(QIcon.fromTheme("audio-x-generic"), "convert to mp3", triggered=self.makeMP3)
-        self.listview.addAction(self.mp3Action)
-
-        self.playlistAction = QAction(QIcon.fromTheme("audio-x-generic"), "make playlist from all mp3 files",
-                                      triggered=self.makePlaylist)
-        self.listview.addAction(self.playlistAction)
-
-        self.playlistPlayerAction = QAction(QIcon.fromTheme("audio-x-generic"), "play Playlist",
-                                            triggered=self.playPlaylist)
-        self.listview.addAction(self.playlistPlayerAction)
-
-        self.refreshAction = QAction(QIcon.fromTheme("view-refresh"), "refresh View", triggered=self.refreshList,
-                                     shortcut="F5")
-        self.refreshAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.refreshAction)
-
-        self.hiddenAction = QAction("show hidden Files", triggered=self.enableHidden)
-        self.hiddenAction.setShortcut(QKeySequence("Ctrl+h"))
-        self.hiddenAction.setShortcutVisibleInContextMenu(True)
-        self.hiddenAction.setCheckable(True)
-        self.listview.addAction(self.hiddenAction)
-
-        self.goBackAction = QAction(QIcon.fromTheme("go-back"), "go back", triggered=self.goBack)
-        self.goBackAction.setShortcut(QKeySequence(Qt.Key_Backspace))
-        self.goBackAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.goBackAction)
-
-        self.helpAction = QAction(QIcon.fromTheme("help"), "Help", triggered=self.showHelp)
-        self.helpAction.setShortcut(QKeySequence(Qt.Key_F1))
-        self.helpAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.helpAction)
-
-        self.terminalAction = QAction(QIcon.fromTheme("terminal"), "open folder in Terminal",
-                                      triggered=self.showInTerminal)
-        self.terminalAction.setShortcut(QKeySequence(Qt.Key_F7))
-        self.terminalAction.setShortcutVisibleInContextMenu(True)
-        self.treeview.addAction(self.terminalAction)
-        self.listview.addAction(self.terminalAction)
-
-        self.startInTerminalAction = QAction(QIcon.fromTheme("terminal"), "execute in Terminal",
-                                             triggered=self.startInTerminal)
-        self.startInTerminalAction.setShortcut(QKeySequence(Qt.Key_F8))
-        self.startInTerminalAction.setShortcutVisibleInContextMenu(True)
-        self.listview.addAction(self.startInTerminalAction)
-
-        self.executableAction = QAction(QIcon.fromTheme("applications-utilities"), "make executable",
-                                        triggered=self.makeExecutable)
-        self.listview.addAction(self.executableAction)
-
-        self.createFolderAction = QAction(QIcon.fromTheme("folder-new"), "create new Folder",
-                                          triggered=self.createNewFolder)
-        self.createFolderAction.setShortcut(QKeySequence("Shift+Ctrl+n"))
-        self.createFolderAction.setShortcutVisibleInContextMenu(True)
-        self.treeview.addAction(self.createFolderAction)
 
     def playPlaylist(self):
         if self.listview.selectionModel().hasSelection():
@@ -831,14 +790,14 @@ class myWindow(QMainWindow):
         self.menu = QMenu(self.listview)
         if self.listview.hasFocus():
             self.menu.addAction(self.createFolderAction)
-            self.menu.addAction(self.openAction)
-            self.menu.addAction(self.openActionText)
-            self.menu.addAction(self.openActionTextRoot)
+            self.menu.addAction(self.actionOpenFile)
+            self.menu.addAction(self.actionOpenText)
+            self.menu.addAction(self.actionOpenTextRoot)
             self.menu.addSeparator()
             if os.path.isdir(path):
-                self.menu.addAction(self.newWinAction)
+                self.menu.addAction(self.actionNewWin)
             self.menu.addSeparator()
-            self.menu.addAction(self.renameAction)
+            self.menu.addAction(self.actionRenameFile)
             self.menu.addSeparator()
             self.menu.addAction(self.copyAction)
             self.menu.addAction(self.cutAction)
@@ -906,9 +865,9 @@ class myWindow(QMainWindow):
             dprint("current path is: %s" % path)
             self.menu = QMenu(self.treeview)
             if os.path.isdir(path):
-                self.menu.addAction(self.newWinAction)
+                self.menu.addAction(self.actionNewWin)
                 self.menu.addAction(self.createFolderAction)
-                self.menu.addAction(self.renameFolderAction)
+                self.menu.addAction(self.actionRenameFolder)
                 self.menu.addAction(self.copyFolderAction)
                 self.menu.addAction(self.pasteFolderAction)
                 self.menu.addAction(self.delFolderAction)
