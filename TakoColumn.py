@@ -52,4 +52,7 @@ class TakoColumn(QWidget):
                 self.parent.files_view.setRootIndex(idx)
 
     def parse_file_path(self, path: str) -> List[str]:
-        return path.split('/')
+        path_list = path.split('/')
+        if not path_list[0]:
+            path_list[0] = '/'
+        return path_list

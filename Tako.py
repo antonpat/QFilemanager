@@ -80,6 +80,7 @@ class TakoWindow(QMainWindow):
         myMachine = "current CPU Architecture: " + sysinfo.currentCpuArchitecture() + " *** " + sysinfo.prettyProductName() + " *** " + sysinfo.kernelType() + " " + sysinfo.kernelVersion()
         self.statusBar().showMessage(myMachine, 0)
 
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     w = TakoWindow()
