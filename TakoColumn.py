@@ -1,9 +1,10 @@
+import os
 from os.path import expanduser
+from typing import List
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import QDir
+from PyQt5.QtCore import QDir, QModelIndex
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QListView, QFileSystemModel
-
 
 class TakoColumn(QWidget):
     def __init__(self, parent: QWidget, title: str, root: str, level: int):
@@ -40,7 +41,15 @@ class TakoColumn(QWidget):
         if not selected.isEmpty():
             sel_index = self.sel_model.currentIndex()
             file_info = self.fileModel.fileInfo(sel_index)
+            sel_path = file_info.absoluteFilePath()
             if file_info.isDir():
-                sel_path = file_info.absoluteFilePath()
-                #self.parent.splitter.addWidget(TakoColumn(self.parent, sel_path, sel_path, self.level + 1))
-                self.parent.add_column(TakoColumn(self.parent, sel_path, sel_path, self.level + 1))
+                if self.parent.path_model.insertRow(self.parent.path_model.rowCount()):
+                    index = self.parent.path_model.index(self.parent.path_model.rowCount() - 1, 0)
+                    self.parent.path_model.setStringList(self.parse_file_path(sel_path))
+
+                self.parent.files_model.setRootPath(sel_path)
+                idx = self.parent.files_model.index(sel_path)
+                self.parent.files_view.setRootIndex(idx)
+
+    def parse_file_path(self, path: str) -> List[str]:
+        return path.split('/')

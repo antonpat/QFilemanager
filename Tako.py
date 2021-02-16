@@ -2,10 +2,11 @@ import os
 import sys
 from os.path import expanduser
 
+from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QTreeView, QFileSystemModel, QVBoxLayout, QMainWindow, QListView, \
-    QSplitter, QHBoxLayout
-from PyQt5.QtCore import QModelIndex, QProcess, QSettings, Qt, QDir, QSysInfo
+    QSplitter, QHBoxLayout, QColumnView
+from PyQt5.QtCore import QModelIndex, QProcess, QSettings, Qt, QDir, QSysInfo, QStringListModel
 
 from TakoColumn import TakoColumn
 
@@ -34,33 +35,50 @@ class TakoWindow(QMainWindow):
 
         self.hiddenEnabled = False
 
-        self.columns = {}
+        self.current_path = []
+
         self.main_column = TakoColumn(self, "Home", expanduser('~'), 0)
-        self.columns[0] = self.main_column
+
+        self.files_model = QtWidgets.QFileSystemModel()
+        self.files_view = QColumnView()
+        self.files_view.setModel(self.files_model)
 
         self.splitter = QSplitter()
         self.splitter.setOrientation(Qt.Horizontal)
         self.splitter.addWidget(self.main_column)
-        # self.splitter.setSizes([20, 160])
+        self.splitter.addWidget(self.files_view)
+        self.splitter.setSizes([20, 160])
+
+        self.path_bar = QListView()
+        self.path_bar.setFlow(QListView.Flow.LeftToRight)
+        self.path_bar.setFixedHeight(30)
+
+        self.path_model = QStringListModel()
+        self.path_model.setStringList(expanduser('~').split(os.path.sep))
+
+        self.path_bar.setModel(self.path_model)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.path_bar)
+
+        main_wid = QWidget()
+        main_wid.setLayout(layout)
+
         hlay = QHBoxLayout()
         hlay.addWidget(self.splitter)
         wid = QWidget()
         wid.setLayout(hlay)
+
+        layout.addWidget(wid)
+
         self.createStatusBar()
-        self.setCentralWidget(wid)
-        self.setGeometry(0, 26, 900, 500)
+        self.setCentralWidget(main_wid)
+        self.setGeometry(250, 150, 900, 500)
 
     def createStatusBar(self):
         sysinfo = QSysInfo()
         myMachine = "current CPU Architecture: " + sysinfo.currentCpuArchitecture() + " *** " + sysinfo.prettyProductName() + " *** " + sysinfo.kernelType() + " " + sysinfo.kernelVersion()
         self.statusBar().showMessage(myMachine, 0)
-
-    def add_column(self, column: TakoColumn):
-        n = column.level
-        self.columns[n] = column
-        if len(self.columns) > n+1:
-            self.columns = self.columns[:n]
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
