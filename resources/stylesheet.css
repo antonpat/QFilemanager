@@ -1,0 +1,111 @@
+QListView
+{
+background: #e9e9e9;
+selection-color: white;
+border: 1px solid lightgrey;
+selection-background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #729fcf, stop: 1  #204a87);
+color: #202020;
+outline: 0;
+}
+QTreeView
+{
+background: #e9e9e9;
+selection-color: white;
+border: 1px solid lightgrey;
+selection-background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #729fcf, stop: 1  #204a87);
+color: #202020;
+outline: 0;
+}
+QTreeView::item::hover{
+background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #babdb6, stop: 0.5 #d3d7cf, stop: 1 #babdb6);
+}
+QTreeView::item::focus
+{
+background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #729fcf, stop: 1  #204a87);
+border: 0px;
+}
+QMenu
+{
+background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+}
+QMenu::item::selected
+{
+color: white;
+background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightblue, stop: 1  blue);
+border: 0px;
+}
+QHeaderView
+{
+background: #d3d7cf;
+color: #555753;
+font-weight: bold;
+}
+QStatusBar
+{
+font-size: 8pt;
+color: #555753;
+}
+QMenuBar
+{
+background: transparent;
+border: 0px;
+}
+QToolBar
+{
+background: transparent;
+border: 0px;
+}
+QMainWindow
+{
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+}
+QLabel
+{
+    font-size: 10pt;
+    text-align: center;
+     background: transparent;
+    color:#204a87;
+}
+QMessageBox
+{
+    font-size: 10pt;
+    text-align: center;
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+    color:#204a87;
+}
+QPushButton{
+background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 white, stop: 1 grey);
+border-style: solid;
+border-color: darkgrey;
+height: 26px;
+width: 66px;
+font-size: 8pt;
+border-width: 1px;
+border-radius: 6px;
+}
+QPushButton:hover:!pressed{
+background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightblue, stop: 1  blue);
+border-style: solid;
+border-color: darkgrey;
+height: 26px;
+width: 66px;
+border-width: 1px;
+border-radius: 6px;
+}
+QPushButton:hover{
+background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightgreen, stop: 1  green);
+border-style: solid;
+border-color: darkgrey;
+border-width: 1px;
+border-radius: 4px;
+}
+QToolButton
+{
+padding-left: 2px; padding-right: 2px;
+}

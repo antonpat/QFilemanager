@@ -41,18 +41,18 @@ else:
     Enabled.trash = True
 # 4. selfmade
 import findFilesWindow
-from plugin import QTextEdit
-from plugin import Qt5Player
-from plugin import QAudioPlayer
-from plugin import QImageViewer
+from plugins import QTextEdit
+from plugins import Qt5Player
+from plugins import QAudioPlayer
+from plugins import QImageViewer
 try:
-    from plugin import QWebViewer
+    from plugins import QWebViewer
 except ImportError:
     Enabled.webview = False
     print("Web not found", file=sys.stderr)
 else:
     Enabled.webview = True
-from plugin import QTerminalFolder
+from plugins import QTerminalFolder
 
 TREEVIEW = True
 
@@ -62,7 +62,7 @@ def dprint(s):
 class helpWindow(QMainWindow):
     def __init__(self):
         super(helpWindow, self).__init__()
-        self.setStyleSheet(mystylesheet(myWindow()))
+        self.setStyleSheet(get_stylesheet(myWindow()))
         self.helpText = """<p style=" margin-top:2px; margin-bottom:2px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><!--StartFragment--><span style=" font-family:'Helvetica'; font-size:11pt; font-weight:600; text-decoration: underline; color:#2e3436;">Shortcuts:</span></p><br>
 <p style=" margin-top:2px; margin-bottom:2px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-family:'Helvetica'; font-size:10pt; color:#2e3436;">rename File (F2)</span></p>
 <p style=" margin-top:2px; margin-bottom:2px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-family:'Helvetica'; font-size:10pt; color:#2e3436;">copy File(s) (Ctrl-C)</span></p>
@@ -125,7 +125,7 @@ class myWindow(QMainWindow):
     def __init__(self):
         super(myWindow, self).__init__()
 
-        self.setStyleSheet(mystylesheet(self))
+        self.setStyleSheet(get_stylesheet(self))
         self.setWindowTitle("Filemanager")
         self.setWindowIcon(QIcon.fromTheme("system- file-manager"))
         self.process = QProcess()
@@ -523,7 +523,7 @@ class myWindow(QMainWindow):
 
     def showDB(self):
         if self.listview.selectionModel().hasSelection():
-            from plugin import DBViewer
+            from plugins import DBViewer
             index = self.listview.selectionModel().currentIndex()
             path = self.fileModel.fileInfo(index).absoluteFilePath()
             dprint("show image: ", path)
@@ -703,7 +703,7 @@ class myWindow(QMainWindow):
                 self.treeview.setExpanded(index, False)
 
     def getFolderSize(self, path):
-        size = sum(os.path.getsize(f) for f in os.listdir(folder) if os.path.isfile(f))
+        size = sum(os.path.getsize(f) for f in os.listdir(path) if os.path.isfile(f))
         return size
 
     def on_selectionChanged(self):
@@ -1090,120 +1090,11 @@ class myWindow(QMainWindow):
         self.statusBar().showMessage(myMachine, 0)
 
 
-def mystylesheet(self):
-    return """
-QListView
-{
-background: #e9e9e9;
-selection-color: white;
-border: 1px solid lightgrey;
-selection-background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #729fcf, stop: 1  #204a87);
-color: #202020;
-outline: 0;
-}
-QTreeView
-{
-background: #e9e9e9;
-selection-color: white;
-border: 1px solid lightgrey;
-selection-background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #729fcf, stop: 1  #204a87);
-color: #202020;
-outline: 0;
-} 
-QTreeView::item::hover{
-background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #babdb6, stop: 0.5 #d3d7cf, stop: 1 #babdb6);
-}
-QTreeView::item::focus
-{
-background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #729fcf, stop: 1  #204a87);
-border: 0px;
-}
-QMenu
-{
-background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
-                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
-}
-QMenu::item::selected
-{
-color: white;
-background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightblue, stop: 1  blue);
-border: 0px;
-}
-QHeaderView
-{
-background: #d3d7cf;
-color: #555753;
-font-weight: bold;
-}
-QStatusBar
-{
-font-size: 8pt;
-color: #555753;
-}
-QMenuBar
-{
-background: transparent;
-border: 0px;
-}
-QToolBar
-{
-background: transparent;
-border: 0px;
-}
-QMainWindow
-{
-     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
-                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
-}
-QLabel
-{
-    font-size: 10pt;
-    text-align: center;
-     background: transparent;
-    color:#204a87;
-}
-QMessageBox
-{
-    font-size: 10pt;
-    text-align: center;
-     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
-                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
-    color:#204a87;
-}
-QPushButton{
-background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 white, stop: 1 grey);
-border-style: solid;
-border-color: darkgrey;
-height: 26px;
-width: 66px;
-font-size: 8pt;
-border-width: 1px;
-border-radius: 6px;
-}
-QPushButton:hover:!pressed{
-background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightblue, stop: 1  blue);
-border-style: solid;
-border-color: darkgrey;
-height: 26px;
-width: 66px;
-border-width: 1px;
-border-radius: 6px;
-}
-QPushButton:hover{
-background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 lightgreen, stop: 1  green);
-border-style: solid;
-border-color: darkgrey;
-border-width: 1px;
-border-radius: 4px;
-}
-QToolButton
-{
-padding-left: 2px; padding-right: 2px;
-}
-    """
+def get_stylesheet(self, name: str = 'stylesheet'):
+    file_path = os.path.join(os.path.dirname(__file__), 'resources', f'{name}.css')
+    with open(file_path, 'r') as css_file:
+        stylesheet = css_file.read()
+    return stylesheet
 
 
 if __name__ == '__main__':
