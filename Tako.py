@@ -3,10 +3,10 @@ import sys
 from os.path import expanduser
 
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QApplication, QWidget, QTreeView, QFileSystemModel, QVBoxLayout, QMainWindow, QListView, \
     QSplitter, QHBoxLayout, QColumnView
-from PyQt5.QtCore import QModelIndex, QProcess, QSettings, Qt, QDir, QSysInfo, QStringListModel
+from PyQt5.QtCore import QModelIndex, QProcess, QSettings, Qt, QDir, QSysInfo, QStringListModel, QFileInfo
 
 from TakoColumn import TakoColumn
 
@@ -53,8 +53,9 @@ class TakoWindow(QMainWindow):
         self.path_bar.setFlow(QListView.Flow.LeftToRight)
         self.path_bar.setFixedHeight(30)
 
-        self.path_model = QStringListModel()
-        self.path_model.setStringList(expanduser('~').split(os.path.sep))
+        self.path_model = QStandardItemModel()
+
+        self.populate_path_bar(expanduser('~'))
 
         self.path_bar.setModel(self.path_model)
 
@@ -74,6 +75,18 @@ class TakoWindow(QMainWindow):
         self.createStatusBar()
         self.setCentralWidget(main_wid)
         self.setGeometry(250, 150, 900, 500)
+
+    def populate_path_bar(self, path: str):
+        delimiter = os.path.sep if os.path.sep in path else '/'
+        path_items = []
+        self.path_model.removeRows(0, self.path_model.rowCount())
+        for path_item in path.split(delimiter):
+            path_items.append(('' if not path_items else path_items[-1]) + path_item + delimiter)
+        for path_item in path_items:
+            name = self.files_model.index(path_item).data()
+            icon = self.files_model.iconProvider().icon(QFileInfo(path_item))
+
+            self.path_model.appendRow(QStandardItem(icon, name))
 
     def createStatusBar(self):
         sysinfo = QSysInfo()

@@ -43,16 +43,11 @@ class TakoColumn(QWidget):
             file_info = self.fileModel.fileInfo(sel_index)
             sel_path = file_info.absoluteFilePath()
             if file_info.isDir():
-                if self.parent.path_model.insertRow(self.parent.path_model.rowCount()):
-                    index = self.parent.path_model.index(self.parent.path_model.rowCount() - 1, 0)
-                    self.parent.path_model.setStringList(self.parse_file_path(sel_path))
+                self.parent.populate_path_bar(sel_path)
 
                 self.parent.files_model.setRootPath(sel_path)
                 idx = self.parent.files_model.index(sel_path)
                 self.parent.files_view.setRootIndex(idx)
 
-    def parse_file_path(self, path: str) -> List[str]:
-        path_list = path.split('/')
-        if not path_list[0]:
-            path_list[0] = '/'
-        return path_list
+
+
